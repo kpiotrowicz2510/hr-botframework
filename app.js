@@ -57,13 +57,44 @@ bot.dialog('CheckDaysOff',
     matches: 'CheckDaysOff'
 });
 
+bot.dialog('HolidaysSchedule',
+    [function (session,next) {
+        //session.send('We are analyzing your message: \'%s\'', session.message.text);
+        var msg = new builder.Message(session);
+    msg.attachmentLayout(builder.AttachmentLayout.carousel)
+    msg.attachments([
+        new builder.HeroCard(session)
+            .title("Here you have your holiday schedule")
+            .subtitle("Duration: 10 days")
+            .text("From: 21.07.2018\nTo:28.07.2018")
+            .images([])
+            .buttons([
+                builder.CardAction.imBack(session, "change schedule", "Change schedule"),
+                builder.CardAction.imBack(session, "cancel schedule", "Cancel schedule")
+            ])
+    ]);
+    
+    builder.Prompts.text(session,msg);
+    },
+    function (session, results){
+            if(results.response == "change schedule"){
+                session.send("To change your schedule please send an email to HR!")
+            }
+            if(results.response == "cancel schedule"){
+                session.send("Your schedule has been canceled");
+            }
+    }]
+).triggerAction({
+    matches: 'HolidaysSchedule'
+});
+
 bot.dialog('RequestLeave',
     [function (session,args,next) {
-    builder.Prompts.text(session, 'From?');
+    builder.Prompts.text(session, 'Date From?');
     },
     function (session, results){
         requestLeaveDateFrom = results.response;
-        builder.Prompts.text(session, 'To?');
+        builder.Prompts.text(session, 'Date To?');
     },
     function (session, results){
         requestLeaveDateTo = results.response;
@@ -100,6 +131,16 @@ bot.dialog('Communication.CheckIMStatus',
         var nameEntity = builder.EntityRecognizer.findEntity(args.intent.entities, 'UserName');
         var surnameEntity = builder.EntityRecognizer.findEntity(args.intent.entities, 'surname');
 
+
+        if(surnameEntity == null){
+            surnameEntity = {};
+            surnameEntity.entity = "";
+        }
+        if(nameEntity == null){
+            nameEntity = {};
+            nameEntity.entity = "";
+        }
+
         var msg = new builder.Message(session);
         msg.attachmentLayout(builder.AttachmentLayout.carousel)
         msg.attachments([
@@ -109,18 +150,18 @@ bot.dialog('Communication.CheckIMStatus',
                 .text("With what action you want to proceed?")
                 .images([])
                 .buttons([
-                    builder.CardAction.imBack(session, "meeting", "Schedule meeting"),
-                    builder.CardAction.imBack(session, "available", "Check Availability")
+                    builder.CardAction.imBack(session, "schedulemeeting", "Schedule meeting"),
+                    builder.CardAction.imBack(session, "checkavailability", "Check Availability")
                 ])
         ]);
 
         builder.Prompts.text(session,msg);
     },
     function (session, results){
-            if(results.response == "meeting"){
+            if(results.response == "schedulemeeting"){
                 session.beginDialog('scheduleMeeting');
             }
-            if(results.response == "available"){
+            if(results.response == "checkavailability"){
                 session.beginDialog('checkAvailability')
             }
     }
@@ -129,14 +170,56 @@ bot.dialog('Communication.CheckIMStatus',
     matches: 'Communication.CheckIMStatus'
 });
 
-bot.dialog('scheduleMeeting', function (session, args) {
-    session.send("schedulemeeting");
-}).triggerAction({
+bot.dialog('scheduleMeeting', [function (session, args, next) {
+    var msg = new builder.Message(session);
+    msg.attachmentLayout(builder.AttachmentLayout.carousel)
+    msg.attachments([
+        new builder.HeroCard(session)
+            .title("When you want to meet?")
+            .subtitle("")
+            .text("")
+            .images([])
+            .buttons([
+                builder.CardAction.imBack(session, "reserve now", "Now"),
+                builder.CardAction.imBack(session, "reserve today", "Today"),
+                builder.CardAction.imBack(session, "reserve tommorow", "Tommorow"),
+                builder.CardAction.imBack(session, "reserve choose", "Choose date")
+            ])
+    ]);
+    
+    builder.Prompts.text(session,msg);
+
+},
+function (session, results){
+    var msg = new builder.Message(session);
+    msg.attachmentLayout(builder.AttachmentLayout.carousel)
+    msg.attachments([
+        new builder.HeroCard(session)
+            .title("I have found a room for you:")
+            .subtitle("Available 10:30 - 11:30")
+            .text("Based on your schedules I chose ROOM ILC4001 on floor 4")
+            .images([])
+            .buttons([
+                builder.CardAction.imBack(session, "reserve", "Reserve"),
+                builder.CardAction.imBack(session, "cancel", "Cancel")
+            ])
+    ]);
+    
+    builder.Prompts.text(session,msg);
+},
+function(session, results){
+    if(results.response=="reserve"){
+        session.send("Your reservation request has been saved!");
+    }else{
+        session.send('Request canceled');
+    }
+}
+]).triggerAction({
     matches: 'scheduleMeeting'
 });
 
 bot.dialog('checkAvailability', function (session, args) {
-    session.send("checkavaiability");
+    session.send("Current status: On leave till 02.02.2018");
 }).triggerAction({
     matches: 'checkAvailability'
 });
